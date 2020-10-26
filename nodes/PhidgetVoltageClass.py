@@ -116,7 +116,7 @@ def get_device_channel(serial_number, channel):
         """
         #You may remove this line and hard-code the addressing parameters to fit your application
         
-        ch.setDeviceSerialNumber(525330)
+        ch.setDeviceSerialNumber(serial_number)
         ch.setIsHubPortDevice(False)
         ch.setChannel(channel)   
         

@@ -14,13 +14,17 @@ from std_msgs.msg import Float32MultiArray
 from std_msgs.msg import Float32
 from std_msgs.msg import MultiArrayDimension
 
+import get_serial_numbers
+
 ################################################################################
 
 ################################################################################
 
 class Phidget_Voltage_Publisher:
-    def __init__(self, topic):
+    def __init__(self, topic, serials):
         # Define the source of the images, e.g. rostopic name
+        self.serials = serials # all the serial numbers you want to control
+        print('Master control of these serials: ', serials)
         self.master_topic = topic + '_master'
         self.master_sub = rospy.Subscriber(self.master_topic, Float32, self.set_master)
 
@@ -35,9 +39,11 @@ class Phidget_Voltage_Publisher:
 
     def pub_voltage(self):
         t = time.time()
-        arr = np.array([[525330, 0, self.val],
-                        [525330, 1, self.val],
-                        [525330, 2, self.val],])
+        for serial in serials:
+            arr = np.array([[serial, 0, self.val], # serial channel value
+                            [serial, 1, self.val],
+                            [serial, 2, self.val],
+                            [serial, 3, self.val],])
 
         msg = Float32MultiArray(data=np.ravel(arr))
 
@@ -62,8 +68,15 @@ if __name__ == '__main__':
     parser = OptionParser()
     parser.add_option("--topic", type="str", dest="topic", default='led',
                         help="ros topic with Float32 message for velocity control")
+    parser.add_option("--serials", type="str", dest="serials", default=None,
+                        help="list of serial numbers, e.g. [525330, 589935]. To find your serial, type lsusb -v and find your phidgets device(s) and look for iserial.")
     (options, args) = parser.parse_args()
 
+    if options.serials is None:
+        serials = get_serial_numbers.get_serial_numbers_for_idvend_idprod_name('06c2', '0037', 'Phidgets')
+    else:
+        serials = eval(serials)
+
     rospy.init_node('phidget_voltage_publisher', anonymous=True)
-    phidget_voltage_publisher = Phidget_Voltage_Publisher(options.topic)
+    phidget_voltage_publisher = Phidget_Voltage_Publisher(options.topic, serials)
     phidget_voltage_publisher.main()
