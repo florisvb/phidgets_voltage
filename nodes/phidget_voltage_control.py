@@ -31,6 +31,7 @@ class Phidget_Voltage_Control:
         self.default_value = default_value
         self.max_value = 5
         self.min_value = 0
+        self.decimal_precision = 1 # helps prevent overloading of system
 
         self.devices = {}
 
@@ -38,6 +39,7 @@ class Phidget_Voltage_Control:
         d = PhidgetVoltageClass.get_all_device_channels(serial)
         self.devices[serial] = d
         for channel in d:
+            channel.current_value = self.default_value
             channel.setVoltage(self.default_value)
             channel.setEnabled(1)
 
@@ -53,11 +55,15 @@ class Phidget_Voltage_Control:
                 self.initialize_device(serial)
 
             channel = int(channel)
+            value = np.round(value, self.decimal_precision)
             if value > self.max_value:
                 value = self.max_value
             if value < self.min_value:
                 value = self.min_value
-            self.devices[serial][channel].setVoltage(value)
+            if self.devices[serial][channel].current_value != value:
+                self.devices[serial][channel].current_value = value
+                print(serial, channel, value)
+                self.devices[serial][channel].setVoltage(value)
 
 
     def main(self):
